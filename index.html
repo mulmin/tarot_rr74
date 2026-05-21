@@ -250,8 +250,6 @@
     40%  { transform: scale(1.25); box-shadow: 0 0 35px #aa44ffcc, 0 0 70px #8800ff66; border-color: #cc88ff; }
     100% { transform: scale(0.85); opacity: 0.08; }
   }
-    50% { box-shadow: 0 0 28px #aa44ffcc, 0 0 70px #aa44ff55; }
-  }
 
   /* 선택된 카드 슬롯 */
   .selected-slots {
@@ -494,17 +492,6 @@
     display:flex; align-items:center; justify-content:center;
     font-size:22px; color:#4a2080;
   }
-  .deck-card.consumed {
-    opacity:0.15 !important;
-    transform:scale(0.9) !important;
-    pointer-events:none !important;
-    border-color:#2a1060 !important;
-    box-shadow:none !important;
-  }
-    60%  { transform:scale(0.95); }
-    100% { transform:scale(1);   box-shadow:var(--glow-gold); border-color:var(--gold); }
-  }
-
   /* 파티클 */
   .particle {
     position: fixed;
@@ -1037,6 +1024,9 @@ function restart() {
   state.selectedCardEls = [];
   document.querySelectorAll('.fortune-card').forEach(c => c.classList.remove('selected'));
   document.getElementById('btn-next-draw').style.display = 'none';
+  document.getElementById('btn-reveal').style.display = 'none';
+  document.getElementById('draw-counter').textContent = '선택된 카드: 0 / 3';
+  updateSlots();
   goTo('intro');
 }
 
@@ -1058,4 +1048,4 @@ window.goTo = function(screen) {
 </script>
 </body>
 </html>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
