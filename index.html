@@ -526,6 +526,15 @@
     display: none;
   }
 
+  #btn-reveal {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 200;
+    display: none;
+  }
+
   /* 슬롯 되돌리기 버튼 */
   .slot-undo {
     position: absolute; top: 4px; right: 5px;
@@ -603,11 +612,12 @@
   </div>
 
   <div class="deck-area" id="deck-area"></div>
-
-  <button class="btn btn-gold" id="btn-reveal" onclick="goToResult()" style="display:none">
-    🌙 운명을 펼쳐라
-  </button>
 </div>
+
+<!-- 운명을 펼쳐라: 스크롤 영역 밖 고정 버튼 -->
+<button class="btn btn-gold" id="btn-reveal" onclick="goToResult()">
+  🌙 운명을 펼쳐라
+</button>
 
 <!-- ── 화면 4: 결과 ── -->
 <div class="screen hidden" id="screen-result">
@@ -831,6 +841,11 @@ function goTo(screen) {
   if (screen !== 'result') {
     const rb = document.getElementById('btn-restart');
     if (rb) { rb.style.display = 'none'; rb.style.pointerEvents = 'none'; }
+  }
+  // draw 화면이 아닐 때 운명 버튼 숨기기
+  if (screen !== 'draw') {
+    const rv = document.getElementById('btn-reveal');
+    if (rv) { rv.style.display = 'none'; }
   }
 }
 
