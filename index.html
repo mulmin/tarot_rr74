@@ -428,12 +428,7 @@
     font-size: 11px; color: rgba(0,200,255,0.85);
     position: relative; z-index: 1; letter-spacing: 0.3px;
   }
-  .card-number {
-    font-size: 11px; color: rgba(0,200,255,0.75);
-    position: absolute; bottom: 7px; z-index: 1;
-    letter-spacing: 0.5px; font-family: monospace;
-    text-shadow: 0 0 6px rgba(0,200,255,0.4);
-  }
+  .card-number { display: none; } /* 카드 이미지에선 숨김 */
 
   /* 해석 섹션 */
   .interpretations {
@@ -466,6 +461,12 @@
 
   .interp-card-name {
     font-size: 24px; font-weight: 700; color: var(--text);
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .interp-card-roman {
+    font-size: 14px; color: rgba(0,200,255,0.7);
+    font-family: monospace; letter-spacing: 1px;
+    font-weight: 400;
   }
   .interp-text {
     font-size: 22px; color: var(--text-dim);
@@ -1010,7 +1011,7 @@ function goToResult() {
         div.innerHTML = `
           <div class="interp-header">
             <span class="interp-badge ${badgeClass}">${timeLabels[i]}</span>
-            <span class="interp-card-name">${card.emoji} ${card.name}</span>
+            <span class="interp-card-name">${card.emoji} ${card.name}<span class="interp-card-roman">${card.roman}</span></span>
           </div>
           <p class="interp-text">${interp[timeKey]}</p>
         `;
@@ -1043,6 +1044,4 @@ function goToResult() {
               restartBtn.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
               restartBtn.style.pointerEvents = 'none'; // 등장 중 클릭 차단
               restartBtn.style.display = 'inline-block';
-              requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                  restartBtn.style.opacity =
+              requestAnimatio
