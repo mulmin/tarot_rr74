@@ -1044,4 +1044,53 @@ function goToResult() {
               restartBtn.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
               restartBtn.style.pointerEvents = 'none'; // 등장 중 클릭 차단
               restartBtn.style.display = 'inline-block';
-              requestAnimatio
+              requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                  restartBtn.style.opacity = '';
+                  restartBtn.style.transform = '';
+                });
+              });
+              // 버튼 페이드인(500ms) + 여유(100ms) 후 클릭 활성화
+              setTimeout(() => {
+                restartBtn.style.pointerEvents = '';
+                restartBtn.style.transition = '';
+              }, 600);
+            }, { once: true });
+          }, 1200);
+        }
+      }, 600);
+    }, i * 1200);
+  });
+}
+
+function restart() {
+  state.fortune = null;
+  state.selectedCards = [];
+  state.selectedCardEls = [];
+  document.getElementById('deck-area').innerHTML = ''; // 다음 initDeck이 새로 만들 수 있도록
+  document.querySelectorAll('.fortune-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('btn-next-draw').style.display = 'none';
+  document.getElementById('btn-reveal').style.display = 'none';
+  document.getElementById('draw-counter').textContent = '선택된 카드: 0 / 3';
+  updateSlots();
+  goTo('intro');
+}
+
+// 화면 진입 시 덱 초기화
+document.getElementById('screen-draw').addEventListener('transitionend', function() {
+  if (!this.classList.contains('hidden') && state.selectedCards.length === 0) {
+    initDeck();
+  }
+});
+
+// 최초 덱 트리거 (goTo('draw') 시)
+const origGoTo = goTo;
+window.goTo = function(screen) {
+  origGoTo(screen);
+  if (screen === 'draw') {
+    setTimeout(initDeck, 100);
+  }
+};
+</script>
+</body>
+</html>
