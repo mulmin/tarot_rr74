@@ -933,14 +933,9 @@ function updateSlots() {
 // ─── 결과 화면 ───
 function goToResult() {
   goTo('result');
-  // 화면 전환 직후 실수 클릭 방지: 1.5초간 버튼 잠금
+  // 모든 애니메이션이 끝날 때까지 버튼 숨김
   const restartBtn = document.getElementById('btn-restart');
-  restartBtn.style.pointerEvents = 'none';
-  restartBtn.style.opacity = '0.4';
-  setTimeout(() => {
-    restartBtn.style.pointerEvents = '';
-    restartBtn.style.opacity = '';
-  }, 1500);
+  restartBtn.style.display = 'none';
 
   const fortuneNames = { wealth:'재물운', love:'연애운', health:'건강운', career:'진로운' };
   document.getElementById('result-fortune-badge').textContent = fortuneNames[state.fortune];
@@ -1019,6 +1014,20 @@ function goToResult() {
                 overall.style.transform = 'translateY(0)';
               });
             });
+            // 종합 메시지 트랜지션 끝난 후 버튼 등장
+            overall.addEventListener('transitionend', () => {
+              const restartBtn = document.getElementById('btn-restart');
+              restartBtn.style.opacity = '0';
+              restartBtn.style.transform = 'translateY(16px)';
+              restartBtn.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+              restartBtn.style.display = 'inline-block';
+              requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                  restartBtn.style.opacity = '';
+                  restartBtn.style.transform = '';
+                });
+              });
+            }, { once: true });
           }, 1200);
         }
       }, 600);
@@ -1045,15 +1054,4 @@ document.getElementById('screen-draw').addEventListener('transitionend', functio
   }
 });
 
-// 최초 덱 트리거 (goTo('draw') 시)
-const origGoTo = goTo;
-window.goTo = function(screen) {
-  origGoTo(screen);
-  if (screen === 'draw') {
-    setTimeout(initDeck, 100);
-  }
-};
-</script>
-</body>
-</html>
-                                                                                                                                                                                                                                                                                                                                                                                 
+// 최초 덱 트리거
