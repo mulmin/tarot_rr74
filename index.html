@@ -1104,4 +1104,9 @@ const origGoTo = goTo;
 window.goTo = function(screen) {
   origGoTo(screen);
   if (screen === 'draw') {
-    setTime
+    setTimeout(initDeck, 100);
+  }
+};
+</script>
+</body>
+</html>
