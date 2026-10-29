@@ -127,6 +127,50 @@
   .f-name { font-size:22px; font-weight:800; }
   .f-desc { font-size:14px; color:var(--dim); text-align:center; line-height:1.5; word-break:keep-all; }
 
+  /* ─── 읽어주기 모드 ─── */
+  .tts-toggle {
+    display:flex; align-items:center; gap:12px;
+    margin-top:26px;
+    background:var(--card-face);
+    border:1px solid rgba(156,123,53,0.3);
+    border-radius:999px;
+    padding:12px 22px;
+    cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .tts-toggle .t-label { font-size:18px; color:var(--text); }
+  .tts-toggle .t-state { font-size:15px; color:var(--dim); }
+  .tts-toggle.on .t-state { color:var(--accent); font-weight:700; }
+  .tts-switch {
+    width:44px; height:26px;
+    background:rgba(0,0,0,0.12);
+    border-radius:999px;
+    position:relative;
+    transition:background var(--dur-s) var(--ease);
+  }
+  .tts-switch::after {
+    content:'';
+    position:absolute; top:3px; left:3px;
+    width:20px; height:20px;
+    background:#fff; border-radius:50%;
+    box-shadow:0 1px 4px rgba(0,0,0,0.25);
+    transition:left var(--dur-s) var(--ease);
+  }
+  .tts-toggle.on .tts-switch { background:var(--accent); }
+  .tts-toggle.on .tts-switch::after { left:21px; }
+
+  .tts-play {
+    flex:none;
+    width:40px; height:40px;
+    border:1px solid rgba(156,123,53,0.45);
+    border-radius:50%;
+    background:var(--card-face);
+    font-size:17px;
+    cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .tts-play.speaking { background:rgba(156,123,53,0.15); }
+
   /* ─── 뽑기 (리추얼) ─── */
   .step-label { font-size:13px; letter-spacing:4px; color:var(--accent); margin-bottom:14px; }
   .headline {
@@ -388,6 +432,13 @@
       <span class="f-desc">학업, 직업,<br>성장의 길</span>
     </div>
   </div>
+
+  <div class="tts-toggle" id="tts-toggle">
+    <span style="font-size:22px">🔊</span>
+    <span class="t-label">해석 읽어주기</span>
+    <span class="t-state" id="tts-state">꺼짐</span>
+    <span class="tts-switch"></span>
+  </div>
 </div>
 
 <!-- ━━━ 카드 뽑기 (리추얼) ━━━ -->
@@ -403,6 +454,7 @@
     <div class="interp-head">
       <span class="interp-badge" id="interp-badge"></span>
       <span class="interp-card-name" id="interp-name"></span>
+      <button class="tts-play" id="tts-play" aria-label="읽어주기">🔊</button>
     </div>
     <p class="interp-text" id="interp-text"></p>
   </div>
@@ -581,6 +633,7 @@ const TIME_KO = ['과거', '현재', '미래'];
 const TIME_KEYS = ['past', 'present', 'future'];
 
 function goScreen(name) {
+  if (window.TTS) TTS.stop();
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + name).classList.add('active');
   window.scrollTo(0, 0);
@@ -758,6 +811,8 @@ btnMain.onclick = () => {
         interp.style.display = 'block';
         requestAnimationFrame(() => interp.classList.add('visible'));
         state = 'interp';
+        TTS.current = `${TIME_KO[step]}의 카드, ${card.name}. ${INTERP[fortune][cardId][TIME_KEYS[step]]}`;
+        TTS.speak(TTS.current);
       }, 1200);
 
       setTimeout(() => {
@@ -767,6 +822,7 @@ btnMain.onclick = () => {
 
   } else if (state === 'interp') {
     if (step < 2) {
+      TTS.stop();
       step++;
       state = 'pick';
       // ① 풀이·이전 카드 먼저 사라짐
@@ -803,9 +859,12 @@ btnMain.onclick = () => {
         const msgs = OVERALL[fortune];
         document.getElementById('interp-badge').textContent = '종합';
         document.getElementById('interp-name').textContent = '🌟 운명의 메시지';
-        document.getElementById('interp-text').textContent = msgs[Math.floor(Math.random()*msgs.length)];
+        const overallMsg = msgs[Math.floor(Math.random()*msgs.length)];
+        document.getElementById('interp-text').textContent = overallMsg;
         interp.style.display = 'block';
         setTimeout(() => interp.classList.add('visible'), 300);
+        TTS.current = '세 장의 카드가 전하는 운명의 메시지. ' + overallMsg;
+        TTS.speak(TTS.current);
 
         const dl = document.getElementById('detail-list');
         dl.innerHTML = picks.map((id, i) => `
@@ -825,6 +884,70 @@ btnMain.onclick = () => {
     location.reload();
   }
 };
+
+/* ═══ 읽어주기 (Web Speech API) ═══ */
+const TTS = {
+  on: localStorage.getItem('ttsOn') === '1',
+  voice: null,
+  current: '',
+
+  init() {
+    if (!('speechSynthesis' in window)) {
+      document.getElementById('tts-toggle').style.display = 'none';
+      return;
+    }
+    const pick = () => {
+      const vs = speechSynthesis.getVoices().filter(v => v.lang.startsWith('ko'));
+      // 로컬(기기 내장) 한국어 음성 우선
+      this.voice = vs.find(v => v.localService) || vs[0] || null;
+    };
+    pick();
+    speechSynthesis.onvoiceschanged = pick;
+    this.renderToggle();
+  },
+
+  speak(text, force) {
+    if (!this.on && !force) return;
+    if (!('speechSynthesis' in window)) return;
+    this.stop();
+    this.current = text;
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'ko-KR';
+    if (this.voice) u.voice = this.voice;
+    u.rate = 0.95;   // 50대 청취 기준, 살짝 느리게
+    u.pitch = 1.0;
+    u.onstart = () => document.getElementById('tts-play').classList.add('speaking');
+    u.onend = u.onerror = () => document.getElementById('tts-play').classList.remove('speaking');
+    speechSynthesis.speak(u);
+  },
+
+  stop() {
+    speechSynthesis.cancel();
+    document.getElementById('tts-play').classList.remove('speaking');
+  },
+
+  toggle() {
+    this.on = !this.on;
+    localStorage.setItem('ttsOn', this.on ? '1' : '0');
+    this.renderToggle();
+    // iOS는 사용자 터치 안에서 첫 발화가 있어야 이후 자동 재생이 풀림
+    if (this.on) this.speak('읽어주기 모드를 켰습니다. 이제 해석을 음성으로 들려드릴게요.', true);
+    else this.stop();
+  },
+
+  renderToggle() {
+    document.getElementById('tts-toggle').classList.toggle('on', this.on);
+    document.getElementById('tts-state').textContent = this.on ? '켜짐' : '꺼짐';
+  }
+};
+TTS.init();
+document.getElementById('tts-toggle').addEventListener('click', () => TTS.toggle());
+
+// 🔊 버튼: 모드와 무관하게 현재 풀이를 읽기/멈추기
+document.getElementById('tts-play').addEventListener('click', () => {
+  if (speechSynthesis.speaking) TTS.stop();
+  else TTS.speak(TTS.current, true);
+});
 
 /* ═══ PWA: 홈 화면에 추가 ═══ */
 if ('serviceWorker' in navigator) {
