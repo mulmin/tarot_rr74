@@ -226,6 +226,7 @@
   <div class="sheet-body" id="sheet-body"></div>
 </div>
 
+<script src="tts.js"></script>
 <script src="symbols.js"></script>
 <script>
 const ALL_CARDS = ['00_fool','01_magician','02_high_priestess','03_empress','04_emperor','05_hierophant','06_lovers','07_chariot','08_strength','09_hermit','10_wheel_of_fortune','11_justice','12_hanged_man','13_death','14_temperance','15_devil','16_tower','17_star','18_moon','19_sun','20_judgement','21_world'];
@@ -357,9 +358,15 @@ function openPart(i) {
   sheet.classList.add('open');
   backdrop.classList.add('open');
   sheet.scrollTop = 0;
+
+  TTS.speak(
+    `${part.label}. ${part.keywords.join(', ')}. ${part.quote}. ` +
+    part.sections.map(s => s.p).join(' ')
+  );
 }
 
 function closeSheet() {
+  if (window.TTS) TTS.stop();
   const wasOpen = sheetOpen;
   sheetOpen = false;
   sheet.classList.remove('open');
