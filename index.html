@@ -77,9 +77,26 @@
   .menu-desc { font-size:16px; color:var(--dim); line-height:1.6; word-break:keep-all; padding-right:30px; }
   .hub-foot { margin-top:44px; font-size:12px; color:var(--dim); opacity:0.7; letter-spacing:1px; }
 
+  .install-row {
+    display:none;
+    align-items:center; gap:10px;
+    margin-top:24px;
+  }
+  .install-row.show { display:flex; }
+  .install-dismiss {
+    flex:none;
+    width:44px; height:44px;
+    border:1px solid rgba(0,0,0,0.15);
+    border-radius:50%;
+    background:transparent;
+    color:var(--dim);
+    font-size:18px; line-height:1;
+    cursor:pointer;
+    font-family:inherit;
+    -webkit-tap-highlight-color:transparent;
+  }
   .install-btn {
     display:none;
-    margin-top:24px;
     font-family:inherit; font-size:18px;
     color:var(--accent); background:rgba(156,123,53,0.08);
     border:1px solid rgba(156,123,53,0.45);
@@ -87,7 +104,7 @@
     padding:14px 30px;
     cursor:pointer;
   }
-  .install-btn.show { display:block; }
+  .install-row.show .install-btn { display:block; }
   .install-btn:active { background:rgba(156,123,53,0.16); }
 
   .ios-guide {
@@ -395,7 +412,10 @@
     <span class="tts-switch"></span>
   </div>
 
-  <button class="install-btn" id="install-btn">📲 휴대폰에 앱으로 받기</button>
+  <div class="install-row" id="install-row">
+    <button class="install-btn" id="install-btn">📲 휴대폰에 앱으로 받기</button>
+    <button class="install-dismiss" id="install-dismiss" aria-label="설치 안내 닫기">✕</button>
+  </div>
   <div class="ios-guide" id="ios-guide">
     아이폰에서는 Safari 하단의 <b>공유 버튼(↑)</b>을 누른 뒤<br>
     <b>"홈 화면에 추가"</b>를 선택하면 앱으로 설치됩니다.
@@ -890,23 +910,31 @@ if ('serviceWorker' in navigator) {
 }
 
 const installBtn = document.getElementById('install-btn');
+const installRow = document.getElementById('install-row');
+const installDismissed = localStorage.getItem('installDismissed') === '1';
 let deferredPrompt = null;
 
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
-  installBtn.classList.add('show');
+  if (!installDismissed) installRow.classList.add('show');
 });
 
 const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
 const inStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
-if (isIos && !inStandalone) installBtn.classList.add('show');
+if (isIos && !inStandalone && !installDismissed) installRow.classList.add('show');
+
+document.getElementById('install-dismiss').addEventListener('click', () => {
+  installRow.classList.remove('show');
+  document.getElementById('ios-guide').classList.remove('show');
+  localStorage.setItem('installDismissed', '1');
+});
 
 installBtn.addEventListener('click', async () => {
   if (deferredPrompt) {
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') installBtn.classList.remove('show');
+    if (outcome === 'accepted') installRow.classList.remove('show');
     deferredPrompt = null;
   } else if (isIos) {
     document.getElementById('ios-guide').classList.toggle('show');
@@ -914,7 +942,7 @@ installBtn.addEventListener('click', async () => {
 });
 
 window.addEventListener('appinstalled', () => {
-  installBtn.classList.remove('show');
+  installRow.classList.remove('show');
   document.getElementById('ios-guide').classList.remove('show');
 });
 
